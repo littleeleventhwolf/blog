@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>本地编译Doris遇到的问题 - 技术札记</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="小十一狼" /><meta name="description" content="问题一：except-md5与actual-md5不一致 执行sh build.sh之后，会根据thirdparty/vars.sh去下载相应的包并进行校验，有时会提示except-md5与actual-md5不一致，错误类似如下：
+" /><meta name="keywords" content="doris" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.155.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/post/%E6%9C%AC%E5%9C%B0%E7%BC%96%E8%AF%91doris%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+<link href="/sass/main.min.af7fd1da18d66c2b017df5b4cae508ef44cfcac3fb4c7c7a327fe4f4f9e28b08.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:url" content="http://localhost:1313/post/%E6%9C%AC%E5%9C%B0%E7%BC%96%E8%AF%91doris%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/">
+  <meta property="og:site_name" content="技术札记">
+  <meta property="og:title" content="本地编译Doris遇到的问题">
+  <meta property="og:description" content="问题一：except-md5与actual-md5不一致 执行sh build.sh之后，会根据thirdparty/vars.sh去下载相应的包并进行校验，有时会提示except-md5与actual-md5不一致，错误类似如下：">
+  <meta property="og:locale" content="zh_cn">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="post">
+    <meta property="article:published_time" content="2021-08-09T11:52:03+08:00">
+    <meta property="article:modified_time" content="2021-08-09T11:52:03+08:00">
+    <meta property="article:tag" content="Doris">
+
+  <meta itemprop="name" content="本地编译Doris遇到的问题">
+  <meta itemprop="description" content="问题一：except-md5与actual-md5不一致 执行sh build.sh之后，会根据thirdparty/vars.sh去下载相应的包并进行校验，有时会提示except-md5与actual-md5不一致，错误类似如下：">
+  <meta itemprop="datePublished" content="2021-08-09T11:52:03+08:00">
+  <meta itemprop="dateModified" content="2021-08-09T11:52:03+08:00">
+  <meta itemprop="wordCount" content="1728">
+  <meta itemprop="keywords" content="doris">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="本地编译Doris遇到的问题">
+  <meta name="twitter:description" content="问题一：except-md5与actual-md5不一致 执行sh build.sh之后，会根据thirdparty/vars.sh去下载相应的包并进行校验，有时会提示except-md5与actual-md5不一致，错误类似如下：">
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">技术札记</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">首页</li>
+      </a><a href="/posts/">
+        <li class="mobile-menu-item">文章</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">标签</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">分类</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">技术札记</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">首页</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/posts/">文章</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">标签</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">分类</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">本地编译Doris遇到的问题</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-08-09 </span>
+        <div class="post-category">
+            <a href="/categories/doris/"> doris </a>
+            </div>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#问题一except-md5与actual-md5不一致">问题一：except-md5与actual-md5不一致</a></li>
+    <li><a href="#问题二datatableszip下载链接的问题">问题二：DataTables.zip下载链接的问题</a></li>
+    <li><a href="#问题三sh-buildsh每次下载都从最新开始无法续传">问题三：<code>sh build.sh</code>每次下载都从最新开始，无法续传</a></li>
+    <li><a href="#问题四s2n-0100targz软件包解压后目录名称与thirdpartyvarssh中的aws_s2n_source不一致">问题四：s2n-0.10.0.tar.gz软件包解压后目录名称与<code>thirdparty/vars.sh</code>中的AWS_S2N_SOURCE不一致</a></li>
+    <li><a href="#问题五提示flags_log_filenum_quota与flags_log_split_method未在该范围内声明">问题五：提示<code>FLAGS_log_filenum_quota</code>与<code>FLAGS_log_split_method</code>未在该范围内声明</a></li>
+    <li><a href="#问题六npm与node版本老旧">问题六：npm与node版本老旧</a></li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <h1 id="问题一except-md5与actual-md5不一致">问题一：except-md5与actual-md5不一致</h1>
+<p>执行<code>sh build.sh</code>之后，会根据<code>thirdparty/vars.sh</code>去下载相应的包并进行校验，有时会提示except-md5与actual-md5不一致，错误类似如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">Failed</span> <span class="n">to</span> <span class="n">download</span> <span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span><span class="o">.</span> <span class="n">attemp</span><span class="p">:</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">incubator</span><span class="o">-</span><span class="n">doris</span><span class="o">/</span><span class="n">thirdparty</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">md5sum</span> <span class="n">check</span> <span class="n">failed</span><span class="o">!</span>
+</span></span><span class="line"><span class="cl"><span class="n">except</span><span class="o">-</span><span class="n">md5</span> <span class="mi">319</span><span class="n">c6ffbbeccc366f14bb68767a6db79</span>
+</span></span><span class="line"><span class="cl"><span class="n">actual</span><span class="o">-</span><span class="n">md5</span> <span class="n">d41d8cd98f00b204e9800998ecf8427e</span>  <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">incubator</span><span class="o">-</span><span class="n">doris</span><span class="o">/</span><span class="n">thirdparty</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</span></span><span class="line"><span class="cl"><span class="n">Archive</span> <span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">will</span> <span class="n">be</span> <span class="n">removed</span> <span class="ow">and</span> <span class="n">download</span> <span class="n">again</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="n">Failed</span> <span class="n">to</span> <span class="n">download</span> <span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</span></span><span class="line"><span class="cl"><span class="n">Failed</span> <span class="n">to</span> <span class="n">download</span> <span class="n">boost_1_64_0</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这种情况下，如果我们确信下载的是完整的包，那么可以手动修改<code>thirdparty/vars.sh</code>中对应包的MD5SUM值。</p>
+<h1 id="问题二datatableszip下载链接的问题">问题二：DataTables.zip下载链接的问题</h1>
+<p><code>thirdparty/vars.sh</code>中提供的DataTables.zip下载链接<code>https://datatables.net/download/builder?bs-3.3.7/jq-3.3.1/dt-1.10.24</code>不能下载到dt-1.10.24版本，将链接拷贝到浏览器上查询会提示：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">Error</span><span class="p">:</span> <span class="n">Only</span> <span class="n">libraries</span> <span class="n">of</span> <span class="n">the</span> <span class="n">current</span> <span class="n">release</span> <span class="n">version</span> <span class="n">can</span> <span class="n">be</span> <span class="n">used</span> <span class="n">by</span> <span class="n">the</span> <span class="o">.</span> <span class="n">package</span> <span class="n">builder</span><span class="o">.</span> <span class="n">The</span> <span class="n">library</span> <span class="n">DataTables</span><span class="s1">&#39; s current release version is 1.10.25. Please reload the download builder page to have it use the latest libraries.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>基于该提示，将<code>thirdparty/vars.sh</code>中DataTables的下载链接修改为：<code>https://datatables.net/download/builder?bs-3.3.7/jq-3.3.1/dt-1.10.25</code>，并修改<code>DATATABLES_SOURCE=&quot;DataTables-1.10.25&quot;</code>。</p>
+<p>另外发现docker镜像编译中已经针对该问题进行了修复，其<code>thirdparty/vars.sh</code>中关于DataTables的内容如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="c1"># datatables, bootstrap 3 and jQuery 3</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># The origin download url is always changing: https://datatables.net/download/builder?bs-3.3.7/jq-3.3.1/dt-1.10.25</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># So we put it in our own http server.</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># If someone can offer an official url for DataTables, please update this.</span>
+</span></span><span class="line"><span class="cl"><span class="n">DATATABLES_DOWNLOAD</span><span class="o">=</span><span class="s2">&#34;https://doris-thirdparty-repo.bj.bcebos.com/thirdparty/DataTables.zip&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">DATATABLES_NAME</span><span class="o">=</span><span class="s2">&#34;DataTables.zip&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">DATATABLES_SOURCE</span><span class="o">=</span><span class="s2">&#34;DataTables-1.10.25&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">DATATABLES_MD5SUM</span><span class="o">=</span><span class="s2">&#34;c8fd73997c9871e213ee4211847deed5&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>大家如果直接编译遇到问题二，可以直接使用上面的内容替换本地<code>thirdparty/vars.sh</code>该部分内容。</p>
+<h1 id="问题三sh-buildsh每次下载都从最新开始无法续传">问题三：<code>sh build.sh</code>每次下载都从最新开始，无法续传</h1>
+<p>可以进入目录<code>thirdparty/src</code>，通过<code>wget -c [url]</code>连续下载，最后通过<code>md5sum</code>命令求出软件包的md5sum值，然后在<code>thirdparty/vars.sh</code>中修改对应的MD5SUM。</p>
+<h1 id="问题四s2n-0100targz软件包解压后目录名称与thirdpartyvarssh中的aws_s2n_source不一致">问题四：s2n-0.10.0.tar.gz软件包解压后目录名称与<code>thirdparty/vars.sh</code>中的AWS_S2N_SOURCE不一致</h1>
+<p>s2n-0.10.0.tar.gz解压后，目录是s2n-tls-0.10.0，我的方法是将修改目录名为s2n-0.10.0。另外一种方法则是修改AWS_S2N_SOURCE的值为s2n-tls-0.10.0。</p>
+<p>看到docker镜像编译里，<code>AWS_S2N_SOURCE=s2n-tls-0.10.0</code>。</p>
+<h1 id="问题五提示flags_log_filenum_quota与flags_log_split_method未在该范围内声明">问题五：提示<code>FLAGS_log_filenum_quota</code>与<code>FLAGS_log_split_method</code>未在该范围内声明</h1>
+<p>错误信息如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="p">[</span>  <span class="mi">1</span><span class="o">%</span><span class="p">]</span> <span class="n">Building</span> <span class="n">CXX</span> <span class="n">object</span> <span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">status</span><span class="o">.</span><span class="n">cpp</span><span class="o">.</span><span class="n">o</span>
+</span></span><span class="line"><span class="cl"><span class="p">[</span>  <span class="mi">1</span><span class="o">%</span><span class="p">]</span> <span class="n">Building</span> <span class="n">CXX</span> <span class="n">object</span> <span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">resource_tls</span><span class="o">.</span><span class="n">cpp</span><span class="o">.</span><span class="n">o</span>
+</span></span><span class="line"><span class="cl"><span class="p">[</span>  <span class="mi">1</span><span class="o">%</span><span class="p">]</span> <span class="n">Building</span> <span class="n">CXX</span> <span class="n">object</span> <span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="o">.</span><span class="n">o</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">apache</span><span class="o">-</span><span class="n">doris</span><span class="o">-</span><span class="mf">0.14</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">incubating</span><span class="o">-</span><span class="n">src</span><span class="o">/</span><span class="n">be</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span> <span class="n">In</span> <span class="n">function</span> <span class="s1">&#39;bool doris::init_glog(const char*, bool)&#39;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">apache</span><span class="o">-</span><span class="n">doris</span><span class="o">-</span><span class="mf">0.14</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">incubating</span><span class="o">-</span><span class="n">src</span><span class="o">/</span><span class="n">be</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">70</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="s1">&#39;FLAGS_log_filenum_quota&#39;</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">declared</span> <span class="ow">in</span> <span class="n">this</span> <span class="n">scope</span>
+</span></span><span class="line"><span class="cl">   <span class="mi">70</span> <span class="o">|</span>     <span class="n">FLAGS_log_filenum_quota</span> <span class="o">=</span> <span class="n">config</span><span class="p">::</span><span class="n">sys_log_roll_num</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="o">|</span>     <span class="o">^~~~~~~~~~~~~~~~~~~~~~~</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">apache</span><span class="o">-</span><span class="n">doris</span><span class="o">-</span><span class="mf">0.14</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">incubating</span><span class="o">-</span><span class="n">src</span><span class="o">/</span><span class="n">be</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">101</span><span class="p">:</span><span class="mi">9</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="s1">&#39;FLAGS_log_split_method&#39;</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">declared</span> <span class="ow">in</span> <span class="n">this</span> <span class="n">scope</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">101</span> <span class="o">|</span>         <span class="n">FLAGS_log_split_method</span> <span class="o">=</span> <span class="s2">&#34;day&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="o">|</span>         <span class="o">^~~~~~~~~~~~~~~~~~~~~~</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">apache</span><span class="o">-</span><span class="n">doris</span><span class="o">-</span><span class="mf">0.14</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">incubating</span><span class="o">-</span><span class="n">src</span><span class="o">/</span><span class="n">be</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">104</span><span class="p">:</span><span class="mi">9</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="s1">&#39;FLAGS_log_split_method&#39;</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">declared</span> <span class="ow">in</span> <span class="n">this</span> <span class="n">scope</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">104</span> <span class="o">|</span>         <span class="n">FLAGS_log_split_method</span> <span class="o">=</span> <span class="s2">&#34;hour&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="o">|</span>         <span class="o">^~~~~~~~~~~~~~~~~~~~~~</span>
+</span></span><span class="line"><span class="cl"><span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">apache</span><span class="o">-</span><span class="n">doris</span><span class="o">-</span><span class="mf">0.14</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">incubating</span><span class="o">-</span><span class="n">src</span><span class="o">/</span><span class="n">be</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span><span class="mi">107</span><span class="p">:</span><span class="mi">9</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="s1">&#39;FLAGS_log_split_method&#39;</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">declared</span> <span class="ow">in</span> <span class="n">this</span> <span class="n">scope</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">107</span> <span class="o">|</span>         <span class="n">FLAGS_log_split_method</span> <span class="o">=</span> <span class="s2">&#34;size&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="o">|</span>         <span class="o">^~~~~~~~~~~~~~~~~~~~~~</span>
+</span></span><span class="line"><span class="cl"><span class="n">make</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="o">***</span> <span class="p">[</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">build</span><span class="o">.</span><span class="n">make</span><span class="p">:</span><span class="mi">119</span><span class="err">：</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">logconfig</span><span class="o">.</span><span class="n">cpp</span><span class="o">.</span><span class="n">o</span><span class="p">]</span> <span class="err">错误</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl"><span class="n">make</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="o">***</span> <span class="p">[</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Makefile2</span><span class="p">:</span><span class="mi">540</span><span class="err">：</span><span class="n">src</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">CMakeFiles</span><span class="o">/</span><span class="n">Common</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">all</span><span class="p">]</span> <span class="err">错误</span> <span class="mi">2</span>
+</span></span><span class="line"><span class="cl"><span class="n">make</span><span class="p">:</span> <span class="o">***</span> <span class="p">[</span><span class="n">Makefile</span><span class="p">:</span><span class="mi">147</span><span class="err">：</span><span class="n">all</span><span class="p">]</span> <span class="err">错误</span> <span class="mi">2</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>观察错误，发现是glog没有打上patch，阅读<code>third_party/download-thirdparty.sh</code>，发现对于patch是否被打上的判断依据是是否存在文件<code>patched_mark</code>，于是删除目录下所有的<code>patched_mark</code>，重新进行编译，问题解决。</p>
+<h1 id="问题六npm与node版本老旧">问题六：npm与node版本老旧</h1>
+<p>老旧的npm和node在编译过程中，会报js的SyntaxError。</p>
+<p>需要升级到最新的npm和node，可在<code>https://nodejs.org/dist/</code>查找最新版本，如当前是node-v16.6.1-linux-x64。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">小十一狼</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-08-09
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/doris/">doris</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/post/%E8%AF%91%E7%B2%97%E7%95%A5%E4%BC%B0%E7%AE%97flink%E9%9B%86%E7%BE%A4%E7%9A%84%E5%AE%B9%E9%87%8F/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">[译]粗略估算Flink集群的容量</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:2367785195@qq.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/littleeleventhwolf" class="iconfont icon-github" title="github"></a>
+      <a href="https://weibo.com/u/2430523233" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://www.zhihu.com/people/xiao-shi-yilang-19-67" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="https://space.bilibili.com/49799259" class="iconfont icon-bilibili" title="bilibili"></a>
+  
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2017 - 
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

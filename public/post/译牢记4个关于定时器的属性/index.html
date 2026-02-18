@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>[译]牢记4个关于定时器的属性 - 技术札记</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="小十一狼" /><meta name="description" content="原文：4 characteristics of Timers in Apache Flink to keep in mind
+这篇博客讲述Apache Flink中关于使用定时器的一些基础概念和需要考虑的点。在ProcessFunction算子中可以访问流处理应用中基础的构建块：
+" /><meta name="keywords" content="flink" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.155.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/post/%E8%AF%91%E7%89%A2%E8%AE%B04%E4%B8%AA%E5%85%B3%E4%BA%8E%E5%AE%9A%E6%97%B6%E5%99%A8%E7%9A%84%E5%B1%9E%E6%80%A7/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+<link href="/sass/main.min.af7fd1da18d66c2b017df5b4cae508ef44cfcac3fb4c7c7a327fe4f4f9e28b08.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:url" content="http://localhost:1313/post/%E8%AF%91%E7%89%A2%E8%AE%B04%E4%B8%AA%E5%85%B3%E4%BA%8E%E5%AE%9A%E6%97%B6%E5%99%A8%E7%9A%84%E5%B1%9E%E6%80%A7/">
+  <meta property="og:site_name" content="技术札记">
+  <meta property="og:title" content="[译]牢记4个关于定时器的属性">
+  <meta property="og:description" content="原文：4 characteristics of Timers in Apache Flink to keep in mind
+这篇博客讲述Apache Flink中关于使用定时器的一些基础概念和需要考虑的点。在ProcessFunction算子中可以访问流处理应用中基础的构建块：">
+  <meta property="og:locale" content="zh_cn">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="post">
+    <meta property="article:published_time" content="2022-05-20T12:19:35+08:00">
+    <meta property="article:modified_time" content="2022-05-20T12:19:35+08:00">
+    <meta property="article:tag" content="Flink">
+
+  <meta itemprop="name" content="[译]牢记4个关于定时器的属性">
+  <meta itemprop="description" content="原文：4 characteristics of Timers in Apache Flink to keep in mind
+这篇博客讲述Apache Flink中关于使用定时器的一些基础概念和需要考虑的点。在ProcessFunction算子中可以访问流处理应用中基础的构建块：">
+  <meta itemprop="datePublished" content="2022-05-20T12:19:35+08:00">
+  <meta itemprop="dateModified" content="2022-05-20T12:19:35+08:00">
+  <meta itemprop="wordCount" content="1274">
+  <meta itemprop="keywords" content="flink">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="[译]牢记4个关于定时器的属性">
+  <meta name="twitter:description" content="原文：4 characteristics of Timers in Apache Flink to keep in mind
+这篇博客讲述Apache Flink中关于使用定时器的一些基础概念和需要考虑的点。在ProcessFunction算子中可以访问流处理应用中基础的构建块：">
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">技术札记</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">首页</li>
+      </a><a href="/posts/">
+        <li class="mobile-menu-item">文章</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">标签</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">分类</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">技术札记</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">首页</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/posts/">文章</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">标签</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">分类</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">[译]牢记4个关于定时器的属性</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-05-20 </span>
+        <div class="post-category">
+            <a href="/categories/flink/"> flink </a>
+            </div>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#apache-flink的定时器是什么">Apache Flink的定时器是什么？</a></li>
+    <li><a href="#4个关于定时器的属性">4个关于定时器的属性</a>
+      <ul>
+        <li><a href="#1-定时器是注册在keyedstream上的">1. 定时器是注册在KeyedStream上的</a></li>
+        <li><a href="#2-定时器服务会自动去重定时器">2. 定时器服务会自动去重定时器</a></li>
+        <li><a href="#3-定时器会被制作检查点">3. 定时器会被制作检查点</a></li>
+        <li><a href="#4-定时器可以被删除">4. 定时器可以被删除</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>原文：<a href="https://www.ververica.com/blog/4-characteristics-of-timers-in-apache-flink">4 characteristics of Timers in Apache Flink to keep in mind</a></p>
+<p>这篇博客讲述Apache Flink中关于使用定时器的一些基础概念和需要考虑的点。在ProcessFunction算子中可以访问流处理应用中基础的构建块：</p>
+<ul>
+<li>事件（流的元素）</li>
+<li>状态（容错，一致性，仅在keyed stream上）</li>
+<li>定时器（事件时间和处理时间，仅在keyed stream上）</li>
+</ul>
+<p>开发者可以在ProcessFunction中注册定时器。</p>
+<p>关于ProcessFunction更多的信息，建议阅读<a href="https://ci.apache.org/projects/flink/flink-docs-stable/dev/stream/operators/process_function.html">Apache Flink官方文档</a>获取更多指示和指导。</p>
+<h1 id="apache-flink的定时器是什么">Apache Flink的定时器是什么？</h1>
+<p>定时器是可以让流处理应用能够响应并适应处理时间和事件时间的变化。早前的一篇<a href="https://www.ververica.com/blog/stream-processing-introduction-event-time-apache-flink">博客</a>讲解了Apache Flink中的一些时间概念以及处理、摄入、事件时间的差异细节。当对事件流使用定时器，<code>processElement(...)</code>会逐个事件被调用，传入一个Context对象帮助用户访问事件的时间戳和一个定时器服务TimerService。接下来就可以使用TimerService为将要处理的事件时间或处理时间注册定时器回调处理逻辑。之后，当指定的那个时刻来临时，<code>onTimer(...)</code>方法就会被调用。</p>
+<p>取决于定时器注册使用的是处理时间或事件时间，<code>onTimer(...)</code>回调方法会在不同时刻被调用，比如：</p>
+<ul>
+<li>当处理时间被用于注册定时器，机器时钟到达定时器的时间戳时，<code>onTimer(...)</code>方法会被调用；</li>
+<li>当事件时间被用于注册定时器，算子水位线到达或超过定时器的时间戳时，<code>onTimer(...)</code>方法会被调用。</li>
+</ul>
+<p>和<code>processElement(...)</code>方法类似，在<code>onTimer(...)</code>方法中对状态存取也作用于当前key（即，为其注册定时器的key）。</p>
+<p>值得注意的是，<code>onTimer(...)</code> 和<code>processElement(...)</code>都是同步的，因此这两个方法中对状态的存取和更改是安全的。</p>
+<h1 id="4个关于定时器的属性">4个关于定时器的属性</h1>
+<p>这里我们讨论需要牢记的4个关于定时器的属性：</p>
+<h2 id="1-定时器是注册在keyedstream上的">1. 定时器是注册在KeyedStream上的</h2>
+<p>由于是按key注册并触发定时器，所以在任何使用定时器的算子和函数上，KeyedStream都是一个必须的先决条件。</p>
+<h2 id="2-定时器服务会自动去重定时器">2. 定时器服务会自动去重定时器</h2>
+<p>定时器服务TimerService自动去掉重复的定时器，只对每个key和时间戳保留至多一个定时器。这意味着当同一个key或时间戳上注册了多个定时器，<code>onTimer(...)</code>方法只会被调用一次。</p>
+<h2 id="3-定时器会被制作检查点">3. 定时器会被制作检查点</h2>
+<p>Flink会把定时器制作成managed state进行Checkpointing。当作业从checkpoint和savepoint恢复时，在恢复前该被触发的定时器会立即触发。</p>
+<h2 id="4-定时器可以被删除">4. 定时器可以被删除</h2>
+<p>从Flink 1.6开始，定时器可以被<a href="https://ci.apache.org/projects/flink/flink-docs-stable/dev/stream/operators/process_function.html#timer-coalescing">暂停和删除</a>。当Flink版本早于1.5时，可能会遇到Checkpointing性能不佳的问题，因为有许多无法删除和暂停的定时器。</p>
+<p><img src="/%E7%89%A2%E8%AE%B04%E4%B8%AA%E5%85%B3%E4%BA%8E%E5%AE%9A%E6%97%B6%E5%99%A8%E7%9A%84%E5%B1%9E%E6%80%A7/4_characterisrics_of_timer.png" alt="Apache Flink中4个定时器的属性"></p>
+<p>你可以通过以下方式停止处理时间的定时器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="kt">long</span><span class="w"> </span><span class="n">timestampOfTimerToStop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="n">ctx</span><span class="p">.</span><span class="na">timerService</span><span class="p">().</span><span class="na">deleteProcessingTimeTimer</span><span class="p">(</span><span class="n">timestampOfTimerToStop</span><span class="p">);</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>你也可以通过以下方式停止事件时间的定时器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="kt">long</span><span class="w"> </span><span class="n">timestampOfTimerToStop</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="n">ctx</span><span class="p">.</span><span class="na">timerService</span><span class="p">().</span><span class="na">deleteEventTimeTimer</span><span class="p">(</span><span class="n">timestampOfTimerToStop</span><span class="p">);</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意，如果指定时间戳上没有注册定时器，那么停止定时器无效。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">小十一狼</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-05-20
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/flink/">flink</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/post/%E8%AF%91flink%E4%B8%AD3%E4%B8%AA%E5%BD%B1%E5%93%8D%E6%9C%89%E7%8A%B6%E6%80%81%E5%87%BD%E6%95%B0%E5%92%8C%E7%AE%97%E5%AD%90%E6%80%A7%E8%83%BD%E7%9A%84%E9%87%8D%E8%A6%81%E5%9B%A0%E7%B4%A0/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">[译]Flink中3个影响有状态函数和算子性能的重要因素</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/post/%E8%AF%91%E7%B2%97%E7%95%A5%E4%BC%B0%E7%AE%97flink%E9%9B%86%E7%BE%A4%E7%9A%84%E5%AE%B9%E9%87%8F/">
+            <span class="next-text nav-default">[译]粗略估算Flink集群的容量</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:2367785195@qq.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/littleeleventhwolf" class="iconfont icon-github" title="github"></a>
+      <a href="https://weibo.com/u/2430523233" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://www.zhihu.com/people/xiao-shi-yilang-19-67" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="https://space.bilibili.com/49799259" class="iconfont icon-bilibili" title="bilibili"></a>
+  
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2017 - 
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>

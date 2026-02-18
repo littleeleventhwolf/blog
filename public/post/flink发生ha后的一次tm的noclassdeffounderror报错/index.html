@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Flink发生HA后的一次TM的NoClassDefFoundError报错 - 技术札记</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="小十一狼" /><meta name="description" content="〇、结论先行 使用了已关闭的 ClassLoader 去加载类，但关闭的 ClassLoader 已丧失加载新类的能力。
+已关闭的 ClassLoader 是被缓存的类实例持有并在类加载过程中使用的。
+" /><meta name="keywords" content="flink" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.155.3 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/post/flink%E5%8F%91%E7%94%9Fha%E5%90%8E%E7%9A%84%E4%B8%80%E6%AC%A1tm%E7%9A%84noclassdeffounderror%E6%8A%A5%E9%94%99/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+
+
+<link href="/sass/main.min.af7fd1da18d66c2b017df5b4cae508ef44cfcac3fb4c7c7a327fe4f4f9e28b08.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:url" content="http://localhost:1313/post/flink%E5%8F%91%E7%94%9Fha%E5%90%8E%E7%9A%84%E4%B8%80%E6%AC%A1tm%E7%9A%84noclassdeffounderror%E6%8A%A5%E9%94%99/">
+  <meta property="og:site_name" content="技术札记">
+  <meta property="og:title" content="Flink发生HA后的一次TM的NoClassDefFoundError报错">
+  <meta property="og:description" content="〇、结论先行 使用了已关闭的 ClassLoader 去加载类，但关闭的 ClassLoader 已丧失加载新类的能力。
+已关闭的 ClassLoader 是被缓存的类实例持有并在类加载过程中使用的。">
+  <meta property="og:locale" content="zh_cn">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="post">
+    <meta property="article:published_time" content="2026-02-18T16:08:00+08:00">
+    <meta property="article:modified_time" content="2026-02-18T16:08:00+08:00">
+    <meta property="article:tag" content="Flink">
+
+  <meta itemprop="name" content="Flink发生HA后的一次TM的NoClassDefFoundError报错">
+  <meta itemprop="description" content="〇、结论先行 使用了已关闭的 ClassLoader 去加载类，但关闭的 ClassLoader 已丧失加载新类的能力。
+已关闭的 ClassLoader 是被缓存的类实例持有并在类加载过程中使用的。">
+  <meta itemprop="datePublished" content="2026-02-18T16:08:00+08:00">
+  <meta itemprop="dateModified" content="2026-02-18T16:08:00+08:00">
+  <meta itemprop="wordCount" content="3092">
+  <meta itemprop="keywords" content="flink">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Flink发生HA后的一次TM的NoClassDefFoundError报错">
+  <meta name="twitter:description" content="〇、结论先行 使用了已关闭的 ClassLoader 去加载类，但关闭的 ClassLoader 已丧失加载新类的能力。
+已关闭的 ClassLoader 是被缓存的类实例持有并在类加载过程中使用的。">
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">技术札记</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">首页</li>
+      </a><a href="/posts/">
+        <li class="mobile-menu-item">文章</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">标签</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">分类</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">技术札记</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">首页</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/posts/">文章</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">标签</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">分类</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Flink发生HA后的一次TM的NoClassDefFoundError报错</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2026-02-18 </span>
+        <div class="post-category">
+            <a href="/categories/flink/"> flink </a>
+            </div>
+        
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#结论先行">〇、结论先行</a></li>
+    <li><a href="#一报错详情">一、报错详情</a></li>
+    <li><a href="#二深入问题">二、深入问题</a>
+      <ul>
+        <li><a href="#21-使用已关闭-classloader">2.1 使用已关闭 ClassLoader</a></li>
+        <li><a href="#22-类加载链路的前一个类必然使用了已关闭-classloader">2.2 类加载链路的前一个类必然使用了已关闭 ClassLoader</a></li>
+        <li><a href="#23-mtplainsaslserverfactory-是怎么被已关闭类加载的">2.3 MTPlainSaslServerFactory 是怎么被已关闭类加载的？</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <h1 id="结论先行">〇、结论先行</h1>
+<p><strong>使用了已关闭的 ClassLoader 去加载类，但关闭的 ClassLoader 已丧失加载新类的能力。</strong></p>
+<p><strong>已关闭的 ClassLoader 是被缓存的类实例持有并在类加载过程中使用的。</strong></p>
+<p>以下简单说明一下过程，用 ChildFirstClassLoader1 代表 failover 前的 ClassLoader，用 ChildFirstClassLoader2 代表 failover 后的 ClassLoader：</p>
+<p>Kafka Login 模块初始化时，提供了 MTPlainSaslServerProvider，该类由 ChildFirstClassLoader1 加载并在 sun.security.jca.Providers 中被缓存；</p>
+<p>Failover 后，ChildFirstClassLoader1 被关闭，ChildFirstClassLoader2 诞生了；</p>
+<p>ChildFirstClassLoader2 在执行 Hadoop 相关类的时候，获取所有的 SaslServerFactory，其中关于 Kafka 的 MTPlainSaslServerFactory 需要通过已被缓存的 MTPlainSaslServerProvider 对应的 ChildFirstClassLoader1 加载，然后调用 getMechanismNames，其中使用了外部类 MTPlainSaslServer 的 LOGGER 引用，所以需要去加载 MTPlainSaslServer 类，该类在 ChildFirstClassLoader1 关闭前未被加载，此时类加载器 ChildFirstClassLoader1 已关闭，再去加载就找不到类。</p>
+<h1 id="一报错详情">一、报错详情</h1>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">NoClassDefFoundError</span><span class="p">:</span> <span class="n">org</span><span class="o">/</span><span class="n">apache</span><span class="o">/</span><span class="n">mtkafka</span><span class="o">/</span><span class="n">common</span><span class="o">/</span><span class="n">security</span><span class="o">/</span><span class="n">meituan</span><span class="o">/</span><span class="n">MTPlainSaslServer</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">mtkafka</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">MTPlainSaslServer</span><span class="o">$</span><span class="n">MTPlainSaslServerFactory</span><span class="o">.&lt;</span><span class="n">clinit</span><span class="o">&gt;</span><span class="p">(</span><span class="n">MTPlainSaslServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">148</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="err">?</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Class</span><span class="o">.</span><span class="n">forName0</span><span class="p">(</span><span class="n">Native</span> <span class="n">Method</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Class</span><span class="o">.</span><span class="n">forName</span><span class="p">(</span><span class="n">Class</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">348</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">loadFactory</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">447</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">getFactories</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">651</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">getSaslServerFactories</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">608</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">SaslRpcServer</span><span class="o">$</span><span class="n">FastSaslServerFactory</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">376</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">184</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">ipc</span><span class="o">.</span><span class="n">RPC</span><span class="o">.</span><span class="n">getProtocolProxy</span><span class="p">(</span><span class="n">RPC</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">595</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createNNProxyWithClientProtocol</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">432</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createNonHAProxy</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">318</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">namenode</span><span class="o">.</span><span class="n">ha</span><span class="o">.</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">$</span><span class="n">DefaultProxyFactory</span><span class="o">.</span><span class="n">createProxy</span><span class="p">(</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">68</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">namenode</span><span class="o">.</span><span class="n">ha</span><span class="o">.</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">getProxy</span><span class="p">(</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">152</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryInvocationHandler</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">RetryInvocationHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">75</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryInvocationHandler</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">RetryInvocationHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">66</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryProxy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">RetryProxy</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">58</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createProxy</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">185</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DFSClient</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">DFSClient</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">925</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DFSClient</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">DFSClient</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">855</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DistributedFileSystem</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">DistributedFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">158</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">createFileSystem</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">2863</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">406</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ChRootedFileSystem</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">ChRootedFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">109</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="n">getTargetFileSystem</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">185</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="n">getTargetFileSystem</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">createLink</span><span class="p">(</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">306</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">InodeTree</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">417</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="o">&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">createFileSystem</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">2863</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">406</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">192</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">389</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">getFileSystem</span><span class="p">(</span><span class="ne">Path</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">295</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">shaded</span><span class="o">-</span><span class="n">hadoop</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">uber</span><span class="o">-</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">2.7</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt</span><span class="o">-</span><span class="mf">2.0</span><span class="o">.</span><span class="mi">5</span><span class="o">-</span><span class="mf">15.0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">HiveUtil</span><span class="o">.</span><span class="n">getFileSystem</span><span class="p">(</span><span class="n">HiveUtil</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">567</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="err">?</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">hive</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">initFileSystem</span><span class="p">(</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">369</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="err">?</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">hive</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">713</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="err">?</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">tryRestoreFunction</span><span class="p">(</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">189</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">restoreFunctionState</span><span class="p">(</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">171</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">AbstractUdfStreamOperator</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">AbstractUdfStreamOperator</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">94</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">StreamOperatorStateHandler</span><span class="o">.</span><span class="n">initializeOperatorState</span><span class="p">(</span><span class="n">StreamOperatorStateHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">122</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">AbstractStreamOperator</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">AbstractStreamOperator</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">283</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">RegularOperatorChain</span><span class="o">.</span><span class="n">initializeStateAndOpenOperators</span><span class="p">(</span><span class="n">RegularOperatorChain</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">106</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restoreGates</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">738</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTaskActionExecutor</span><span class="o">$</span><span class="n">SynchronizedStreamTaskActionExecutor</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">StreamTaskActionExecutor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">100</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restoreInternal</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">713</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">679</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">runWithSystemExitMonitoring</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">937</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">restoreAndInvoke</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">906</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">doRun</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">730</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">550</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="ne">Thread</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">748</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="n">Caused</span> <span class="n">by</span><span class="p">:</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">ClassNotFoundException</span><span class="p">:</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">mtkafka</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">MTPlainSaslServer</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">URLClassLoader</span><span class="o">.</span><span class="n">findClass</span><span class="p">(</span><span class="n">URLClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">387</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">ClassLoader</span><span class="o">.</span><span class="n">loadClass</span><span class="p">(</span><span class="n">ClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">418</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">FlinkUserCodeClassLoader</span><span class="o">.</span><span class="n">loadClassWithoutExceptionHandling</span><span class="p">(</span><span class="n">FlinkUserCodeClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">67</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ChildFirstClassLoader</span><span class="o">.</span><span class="n">loadClassWithoutExceptionHandling</span><span class="p">(</span><span class="n">ChildFirstClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">74</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">FlinkUserCodeClassLoader</span><span class="o">.</span><span class="n">loadClass</span><span class="p">(</span><span class="n">FlinkUserCodeClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">51</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="n">flink</span><span class="o">-</span><span class="n">dist</span><span class="o">-</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="o">.</span><span class="n">jar</span><span class="p">:</span><span class="mf">1.16</span><span class="o">.</span><span class="mi">1</span><span class="o">-</span><span class="n">mt001</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">ClassLoader</span><span class="o">.</span><span class="n">loadClass</span><span class="p">(</span><span class="n">ClassLoader</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">351</span><span class="p">)</span> <span class="o">~</span><span class="p">[</span><span class="err">?</span><span class="p">:</span><span class="mf">1.8</span><span class="o">.</span><span class="mi">0</span><span class="n">_312</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">	<span class="o">...</span> <span class="mi">52</span> <span class="n">more</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h1 id="二深入问题">二、深入问题</h1>
+<h2 id="21-使用已关闭-classloader">2.1 使用已关闭 ClassLoader</h2>
+<p>现象带来的直接启示是：加载 org/apache/mtkafka/common/security/meituan/MTPlainSaslServer 必然使用了一个已关闭的 ClassLoader。</p>
+<p>原因：<strong>ClassLoader close 只代表这个 ClassLoader 不能加载新的类了，但是已经加载过的类仍然可以被访问。</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// UrlClassLoader#close 重点看注释</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">   </span><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * Closes this URLClassLoader, so that it can no longer be used to load
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * new classes or resources that are defined by this loader.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * Classes and resources defined by any of this loader&#39;s parents in the
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * delegation hierarchy are still accessible. Also, any classes or resources
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * that are already loaded, are still accessible.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * &lt;p&gt;
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * In the case of jar: and file: URLs, it also closes any files
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * that were opened by it. If another thread is loading a
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * class when the {@code close} method is invoked, then the result of
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * that load is undefined.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * &lt;p&gt;
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * The method makes a best effort attempt to close all opened files,
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * by catching {@link IOException}s internally. Unchecked exceptions
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * and errors are not caught. Calling close on an already closed
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * loader has no effect.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * &lt;p&gt;
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * @exception IOException if closing any file opened by this class loader
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * resulted in an IOException. Any such exceptions are caught internally.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * If only one is caught, then it is re-thrown. If more than one exception
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * is caught, then the second and following exceptions are added
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * as suppressed exceptions of the first one caught, which is then re-thrown.
+</span></span></span><span class="line"><span class="cl"><span class="cm">    *
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * @exception SecurityException if a security manager is set, and it denies
+</span></span></span><span class="line"><span class="cl"><span class="cm">    *   {@link RuntimePermission}{@code (&#34;closeClassLoader&#34;)}
+</span></span></span><span class="line"><span class="cl"><span class="cm">    *
+</span></span></span><span class="line"><span class="cl"><span class="cm">    * @since 1.7
+</span></span></span><span class="line"><span class="cl"><span class="cm">    */</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">close</span><span class="p">()</span><span class="w"> </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      	</span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="22-类加载链路的前一个类必然使用了已关闭-classloader">2.2 类加载链路的前一个类必然使用了已关闭 ClassLoader</h2>
+<p>从 jdk src/hotspot/share/classfile/systemDictionary.cpp  中可以看到在 Find 和 Construct 一个对象实例时，<strong>若没有显示指定 ClassLoader，则使用访问到该类的前一个类对应的类加载器</strong>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// SystemDictionary::find_java_mirror_for_type
+</span></span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Find or construct the Java mirror (java.lang.Class instance) for
+</span></span></span><span class="line"><span class="cl"><span class="c1">// the given field type signature, as interpreted relative to the
+</span></span></span><span class="line"><span class="cl"><span class="c1">// given class loader.  Handles primitives, void, references, arrays,
+</span></span></span><span class="line"><span class="cl"><span class="c1">// and all other reflectable types, except method types.
+</span></span></span><span class="line"><span class="cl"><span class="c1">// N.B.  Code in reflection should use this entry point.
+</span></span></span><span class="line"><span class="cl"><span class="n">Handle</span> <span class="n">SystemDictionary</span><span class="o">::</span><span class="n">find_java_mirror_for_type</span><span class="p">(</span><span class="n">Symbol</span><span class="o">*</span> <span class="n">signature</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                                   <span class="n">Klass</span><span class="o">*</span> <span class="n">accessing_klass</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                                   <span class="n">SignatureStream</span><span class="o">::</span><span class="n">FailureMode</span> <span class="n">failure_mode</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                                   <span class="n">TRAPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="n">Handle</span> <span class="n">class_loader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// What we have here must be a valid field descriptor,
+</span></span></span><span class="line"><span class="cl">  <span class="c1">// and all valid field descriptors are supported.
+</span></span></span><span class="line"><span class="cl">  <span class="c1">// Produce the same java.lang.Class that reflection reports.
+</span></span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">accessing_klass</span> <span class="o">!=</span> <span class="k">nullptr</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">class_loader</span>      <span class="o">=</span> <span class="n">Handle</span><span class="p">(</span><span class="n">THREAD</span><span class="p">,</span> <span class="n">accessing_klass</span><span class="o">-&gt;</span><span class="n">class_loader</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="c1">// ... ...
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因此，推断 org.apache.mtkafka.common.security.meituan.MTPlainSaslServer$MTPlainSaslServerFactory 这个内部类 MTPlainSaslServerFactory 是已关闭 ClassLoader 加载。</p>
+<p><strong>结合 2.1 和 2.2，大胆猜测并推断：某个类被已关闭 ClassLoader 加载，且被缓存，在 failover 后新的 ClassLoader 访问缓存，取到该类，并接着访问之前没访问过的字段引用或方法，导致使用已关闭 ClassLoader 去加载之前未加载的类，导致报错。</strong></p>
+<h2 id="23-mtplainsaslserverfactory-是怎么被已关闭类加载的">2.3 MTPlainSaslServerFactory 是怎么被已关闭类加载的？</h2>
+<p>加载线程栈如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"><span class="n">MTPlainSaslServerFactory</span> <span class="n">loaded</span><span class="o">!</span> <span class="ne">Thread</span> <span class="n">name</span><span class="p">:</span> <span class="n">Source</span><span class="p">:</span> <span class="n">kafkaReader</span> <span class="o">-&gt;</span> <span class="n">LogParserProcessor</span> <span class="o">-&gt;</span> <span class="n">hiveBucketingProcessor</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="c1">#0</span>
+</span></span><span class="line"><span class="cl">	<span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">getStackTrace</span><span class="p">(</span><span class="ne">Thread</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">1559</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">mtkafka</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">MTPlainSaslServer</span><span class="o">$</span><span class="n">MTPlainSaslServerFactory</span><span class="o">.&lt;</span><span class="n">clinit</span><span class="o">&gt;</span><span class="p">(</span><span class="n">MTPlainSaslServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">150</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Class</span><span class="o">.</span><span class="n">forName0</span><span class="p">(</span><span class="n">Native</span> <span class="n">Method</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Class</span><span class="o">.</span><span class="n">forName</span><span class="p">(</span><span class="n">Class</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">348</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">loadFactory</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">447</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">getFactories</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">651</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">javax</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">sasl</span><span class="o">.</span><span class="n">Sasl</span><span class="o">.</span><span class="n">getSaslServerFactories</span><span class="p">(</span><span class="n">Sasl</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">608</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">SaslRpcServer</span><span class="o">$</span><span class="n">FastSaslServerFactory</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">376</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">SaslRpcServer</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">184</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">ipc</span><span class="o">.</span><span class="n">RPC</span><span class="o">.</span><span class="n">getProtocolProxy</span><span class="p">(</span><span class="n">RPC</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">595</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createNNProxyWithClientProtocol</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">432</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createNonHAProxy</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">318</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">namenode</span><span class="o">.</span><span class="n">ha</span><span class="o">.</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">$</span><span class="n">DefaultProxyFactory</span><span class="o">.</span><span class="n">createProxy</span><span class="p">(</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">68</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">namenode</span><span class="o">.</span><span class="n">ha</span><span class="o">.</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">getProxy</span><span class="p">(</span><span class="n">ConfiguredFailoverProxyProvider</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">152</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryInvocationHandler</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">RetryInvocationHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">75</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryInvocationHandler</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">RetryInvocationHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">66</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">RetryProxy</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">RetryProxy</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">58</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">createProxy</span><span class="p">(</span><span class="n">NameNodeProxies</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">185</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DFSClient</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">DFSClient</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">925</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DFSClient</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">DFSClient</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">855</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">hdfs</span><span class="o">.</span><span class="n">DistributedFileSystem</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">DistributedFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">158</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">createFileSystem</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">2863</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">406</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ChRootedFileSystem</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">ChRootedFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">109</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="n">getTargetFileSystem</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">185</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="n">getTargetFileSystem</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">createLink</span><span class="p">(</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">306</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">InodeTree</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">InodeTree</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">417</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">$</span><span class="mf">1.</span><span class="o">&lt;</span><span class="n">init</span><span class="o">&gt;</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">viewfs</span><span class="o">.</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">ViewFileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">179</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">createFileSystem</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">2863</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">406</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">192</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FileSystem</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">389</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">hadoop</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">getFileSystem</span><span class="p">(</span><span class="ne">Path</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">295</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">HiveUtil</span><span class="o">.</span><span class="n">getFileSystem</span><span class="p">(</span><span class="n">HiveUtil</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">567</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">hive</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">initFileSystem</span><span class="p">(</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">369</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">com</span><span class="o">.</span><span class="n">meituan</span><span class="o">.</span><span class="n">datalinkstream</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">hive</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">HiveBucketingProcessor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">713</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">tryRestoreFunction</span><span class="p">(</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">189</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">restoreFunctionState</span><span class="p">(</span><span class="n">StreamingFunctionUtils</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">171</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">AbstractUdfStreamOperator</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">AbstractUdfStreamOperator</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">94</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">StreamOperatorStateHandler</span><span class="o">.</span><span class="n">initializeOperatorState</span><span class="p">(</span><span class="n">StreamOperatorStateHandler</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">122</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">operators</span><span class="o">.</span><span class="n">AbstractStreamOperator</span><span class="o">.</span><span class="n">initializeState</span><span class="p">(</span><span class="n">AbstractStreamOperator</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">283</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">RegularOperatorChain</span><span class="o">.</span><span class="n">initializeStateAndOpenOperators</span><span class="p">(</span><span class="n">RegularOperatorChain</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">106</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restoreGates</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">738</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTaskActionExecutor</span><span class="o">$</span><span class="n">SynchronizedStreamTaskActionExecutor</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">StreamTaskActionExecutor</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">100</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restoreInternal</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">713</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">streaming</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">StreamTask</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">679</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">runWithSystemExitMonitoring</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">937</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">restoreAndInvoke</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">906</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">doRun</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">730</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">org</span><span class="o">.</span><span class="n">apache</span><span class="o">.</span><span class="n">flink</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">taskmanager</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Task</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">550</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="n">java</span><span class="o">.</span><span class="n">lang</span><span class="o">.</span><span class="n">Thread</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="ne">Thread</span><span class="o">.</span><span class="n">java</span><span class="p">:</span><span class="mi">748</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>看以上线程栈，观察 Sasl#loadFactory 方法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// Sasl#loadFactory</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Object</span><span class="w"> </span><span class="nf">loadFactory</span><span class="p">(</span><span class="n">Provider</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">className</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kd">throws</span><span class="w"> </span><span class="n">SaslException</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * Load the implementation class with the same class loader
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * that was used to load the provider.
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * In order to get the class loader of a class, the
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * caller&#39;s class loader must be the same as or an ancestor of
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * the class loader being returned. Otherwise, the caller must
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * have &#34;getClassLoader&#34; permission, or a SecurityException
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * will be thrown.
+</span></span></span><span class="line"><span class="cl"><span class="cm">             */</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">ClassLoader</span><span class="w"> </span><span class="n">cl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="na">getClass</span><span class="p">().</span><span class="na">getClassLoader</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">Class</span><span class="o">&lt;?&gt;</span><span class="w"> </span><span class="n">implClass</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">implClass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Class</span><span class="p">.</span><span class="na">forName</span><span class="p">(</span><span class="n">className</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">cl</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">implClass</span><span class="p">.</span><span class="na">newInstance</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里使用了 Provider 的 ClassLoader。那么再去观察 Provider 的出处：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// Sasl#getFactories</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Set</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getFactories</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">serviceName</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      
+</span></span></span><span class="line"><span class="cl"><span class="w">      	</span><span class="c1">// 重点！获取 providers</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">Provider</span><span class="o">[]</span><span class="w"> </span><span class="n">providers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Security</span><span class="p">.</span><span class="na">getProviders</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">providers</span><span class="p">.</span><span class="na">length</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          	</span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Enumeration</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="o">[</span><span class="n">i</span><span class="o">]</span><span class="p">.</span><span class="na">keys</span><span class="p">();</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="na">hasMoreElements</span><span class="p">();</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">currentKey</span><span class="p">.</span><span class="na">startsWith</span><span class="p">(</span><span class="n">serviceName</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// We should skip the currentKey if it contains a</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// whitespace. The reason is: such an entry in the</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// provider property contains attributes for the</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// implementation of an algorithm. We are only interested</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// in entries which lead to the implementation</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="c1">// classes.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">currentKey</span><span class="p">.</span><span class="na">indexOf</span><span class="p">(</span><span class="s">&#34; &#34;</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                      	</span><span class="c1">// 这里取了 providers</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span><span class="n">String</span><span class="w"> </span><span class="n">className</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">providers</span><span class="o">[</span><span class="n">i</span><span class="o">]</span><span class="p">.</span><span class="na">getProperty</span><span class="p">(</span><span class="n">currentKey</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        				</span><span class="c1">// 这里就是 loadFactory</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                                </span><span class="n">fac</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loadFactory</span><span class="p">(</span><span class="n">providers</span><span class="o">[</span><span class="n">i</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="n">className</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                                </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Collections</span><span class="p">.</span><span class="na">unmodifiableSet</span><span class="p">(</span><span class="n">result</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到这里调用了 Security#getProviders 来获取所有 providers：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// Security#getProviders</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Provider</span><span class="o">[]</span><span class="w"> </span><span class="nf">getProviders</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Providers</span><span class="p">.</span><span class="na">getFullProviderList</span><span class="p">().</span><span class="na">toArray</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>调用 Providers#getFullProviderList：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// Providers#getFullProviderList</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">ProviderList</span><span class="w"> </span><span class="nf">getFullProviderList</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">ProviderList</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kd">synchronized</span><span class="w"> </span><span class="p">(</span><span class="n">Providers</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          	</span><span class="c1">// 这是一处可以返回 ProviderList 的地方</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getThreadProviderList</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">list</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="n">ProviderList</span><span class="w"> </span><span class="n">newList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="na">removeInvalid</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">newList</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="n">changeThreadProviderList</span><span class="p">(</span><span class="n">newList</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                    </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newList</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      	</span><span class="c1">// 这是另外一处可以返回 ProviderList 的地方</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getSystemProviderList</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">ProviderList</span><span class="w"> </span><span class="n">newList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">list</span><span class="p">.</span><span class="na">removeInvalid</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">newList</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">setSystemProviderList</span><span class="p">(</span><span class="n">newList</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newList</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到有两处可以提供 providers 列表返回的地方：getThreadProviderList 和 getSystemProviderList。</p>
+<p>我们应该关注哪个？</p>
+<p><strong>先说结论：用的不是 getThreadProviderList，而是 getSystemProviderList。</strong></p>
+<p>原因：</p>
+<p>getThreadProviderList 是 ThreadLocal 类型</p>
+<p>观察 Providers#beginThreadProviderList 注释说明了：仅用于 Jar 验证和 SunJSSE FIPS 模式。</p>
+<p>看到 getSystemProviderList 直接返回了一个 static 成员，并在静态代码块中初始化，就看到了<strong>类被缓存的迹象，也佐证了 2.2 小节后面的猜测。</strong></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// current system-wide provider list</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// Note volatile immutable object, so no synchronization needed.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">volatile</span><span class="w"> </span><span class="n">ProviderList</span><span class="w"> </span><span class="n">providerList</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// set providerList to empty list first in case initialization somehow</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// triggers a getInstance() call (although that should not happen)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">providerList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ProviderList</span><span class="p">.</span><span class="na">EMPTY</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">providerList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ProviderList</span><span class="p">.</span><span class="na">fromSecurityProperties</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>而且 Providers 是被 BootstrapClassLoader 进行加载的，肯定是 Class&amp;ClassLoader 全局唯一的。</strong></p>
+<p>以上分析了 Provider 和 SaslServerFactory 的关系，现在来看看 MTPlainSaslServerFactory 是怎么把自己搞“坏”的？</p>
+<p>通过开启 -verbose:class 查看类加载的详细信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">// MTPlainSaslServerFactory 的加载
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">// ... ...
+</span></span><span class="line"><span class="cl">[Loaded org.apache.mtkafka.common.security.meituan.MTPlainLoginModule from file:/opt/flink/workdir/blobStore/job_000000000b0f12790000000000000001/blob_p-193f237956bdc195e9edcc0b6fda38196d19c7db-abbf5458a5961e489c6e41e2d7d21f92]
+</span></span><span class="line"><span class="cl">[Loaded org.apache.mtkafka.common.security.meituan.MTPlainSaslServerProvider from file:/opt/flink/workdir/blobStore/job_000000000b0f12790000000000000001/blob_p-193f237956bdc195e9edcc0b6fda38196d19c7db-abbf5458a5961e489c6e41e2d7d21f92]
+</span></span><span class="line"><span class="cl">[Loaded org.apache.mtkafka.common.security.meituan.MTPlainSaslServer$MTPlainSaslServerFactory from file:/opt/flink/workdir/blobStore/job_000000000b0f12790000000000000001/blob_p-193f237956bdc195e9edcc0b6fda38196d19c7db-abbf5458a5961e489c6e41e2d7d21f92]
+</span></span><span class="line"><span class="cl">// ... ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>只放了三行，这三行是距离加载到 MTPlainSaslServerFactory 路径上的“<strong>最后一公里</strong>”。因此从 MTPlainLoginModule 看起：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// MTPlainLoginModule</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MTPlainLoginModule</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">LoginModule</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">static</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">MTPlainSaslServerProvider</span><span class="p">.</span><span class="na">initialize</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  
+</span></span></span><span class="line"><span class="cl"><span class="w">  	</span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>静态代码块初始化 MTPlainSaslServerProvider：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// MTPlainSaslServerProvider</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MTPlainSaslServerProvider</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Provider</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">serialVersionUID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">1L</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">protected</span><span class="w"> </span><span class="nf">MTPlainSaslServerProvider</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="s">&#34;Simple SASL/PLAIN Server Provider&#34;</span><span class="p">,</span><span class="w"> </span><span class="n">1</span><span class="p">.</span><span class="na">0</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;Simple SASL/PLAIN Server Provider for Kafka&#34;</span><span class="p">);</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="kd">super</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&#34;SaslServerFactory.&#34;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">MTPlainSaslServer</span><span class="p">.</span><span class="na">PLAIN_MECHANISM</span><span class="p">,</span><span class="w"> </span><span class="n">MTPlainSaslServer</span><span class="p">.</span><span class="na">MTPlainSaslServerFactory</span><span class="p">.</span><span class="na">class</span><span class="p">.</span><span class="na">getName</span><span class="p">());</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">initialize</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">Security</span><span class="p">.</span><span class="na">addProvider</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">MTPlainSaslServerProvider</span><span class="p">());</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>initialize 方法 addProvider 最终会向上面提到的 ProviderList 中插入 MTPlainSaslServerProvider 实例，这就和本节前半段分析对上了。</p>
+<p>另外实例化 MTPlainSaslServerProvider 是可以看到 <font color="#00dd00">MTPlainSaslServer.MTPlainSaslServerFactory.class.getName()</font>，这就是为什么 MTPlainSaslServerFactory 被加载但是没被实例化的原因，只访问了 class 信息。也是本小节一开始放的“加载线程栈”为什么只在 failover 后才会被调用打印的原因。</p>
+<p>当然这里还访问了 MTPlainSaslServer.PLAIN_MECHANISM，那为什么不加载 MTPlainSaslServer，那按照 2.2 小节的理论也应该去加载 MTPlainSaslServer 才对啊。</p>
+<p>不是这样的，因为 MTPlainSaslServer.PLAIN_MECHANISM 是<strong>常量字符串，会被放到常量池中，编译阶段就完成了这个工作了。因此运行阶段直接去常量池获取即可，这是 JVM 的优化。</strong></p>
+<p>好的，分析到这里，结合报错异常栈去看，已经很明晰了。</p>
+<p>异常栈中 org.apache.hadoop.security.SaslRpcServer$FastSaslServerFactory 初始化时需要获取所有 SaslServerFactory，并调用 getMechanismNames：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-java" data-lang="java"><span class="line"><span class="cl"><span class="c1">// SaslRpcServer$FastSaslServerFactory &lt;init&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">class</span> <span class="nc">FastSaslServerFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">SaslServerFactory</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="n">FastSaslServerFactory</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="o">?&gt;</span><span class="w"> </span><span class="n">props</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="c1">// 获取所有 SaslServerFactory</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="kd">final</span><span class="w"> </span><span class="n">Enumeration</span><span class="o">&lt;</span><span class="n">SaslServerFactory</span><span class="o">&gt;</span><span class="w"> </span><span class="n">factories</span><span class="w"> </span><span class="o">=</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="n">Sasl</span><span class="p">.</span><span class="na">getSaslServerFactories</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">factories</span><span class="p">.</span><span class="na">hasMoreElements</span><span class="p">())</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="n">SaslServerFactory</span><span class="w"> </span><span class="n">factory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factories</span><span class="p">.</span><span class="na">nextElement</span><span class="p">();</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// 调用 getMechanismNames</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">mech</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">factory</span><span class="p">.</span><span class="na">getMechanismNames</span><span class="p">(</span><span class="n">props</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="c1">// ... ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>所有的 SaslServerFactory 中就包括 MTPlainSaslServerFactory，而它就是通过被缓存的 MTPlainSaslServerProvider 对应的已关闭的 ClassLoader 进行加载，但是 MTPlainSaslServerFactory 已被加载过了，所以可以直接被找到。问题就出在接下来的这一步：<strong>去调用 getMechanismNames 时访问 MTPlainSaslServer 的 LOGGER，需要加载 MTPlainSaslServer，该类在 ClassLoader 被关闭前没被加载，现在关闭后去加载，就导致找不到类。</strong></p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">小十一狼</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2026-02-18
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/flink/">flink</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/flink%E7%9A%84tm%E5%86%85%E5%AD%98%E8%AE%A1%E7%AE%97%E9%80%BB%E8%BE%91/">
+            <span class="next-text nav-default">Flink的TM内存计算逻辑</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:2367785195@qq.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/littleeleventhwolf" class="iconfont icon-github" title="github"></a>
+      <a href="https://weibo.com/u/2430523233" class="iconfont icon-weibo" title="weibo"></a>
+      <a href="https://www.zhihu.com/people/xiao-shi-yilang-19-67" class="iconfont icon-zhihu" title="zhihu"></a>
+      <a href="https://space.bilibili.com/49799259" class="iconfont icon-bilibili" title="bilibili"></a>
+  
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  
+
+  <span class="copyright-year">
+    &copy; 
+    2017 - 
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script>
+
+
+
+
+
+
+
+
+</body>
+</html>
