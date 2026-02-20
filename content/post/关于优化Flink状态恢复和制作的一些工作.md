@@ -58,7 +58,7 @@ author: '小十一狼'
 
 在使用 Window 算子时，如果 Window Size 远小于 Checkpoint Interval，此时会出现很多小文件，这些小文件里存的多是 timer state，且由于这些文件的 key 和其他文件不产生交集，所以 compact 也无法真正意义地去删除或合并其中的 key，这在 RocksDB 的官方文档里也有提到，称之为 Trivial Move。
 
-比如，通过构造 TumblingProcessingTimeWindow，让 KeyedStream 一直维持仅一个 key，Checkpointing Interval 为 20s，Window Size 为 100ms，这是 RocksDB 中会逐步累积很多文件：
+比如，通过构造 TumblingProcessingTimeWindow，让 KeyedStream 一直维持仅一个 key，Checkpointing Interval 为 20s，Window Size 为 100ms，这时 RocksDB 中会逐步累积很多文件：
 
 ![small-window-rocksdb-files](/关于优化Flink状态恢复和制作的一些工作/small-window-rocksdb-files.png)
 
