@@ -24,7 +24,7 @@ Colima 是一个开源项目，提供轻量级的容器运行时环境。
 brew install colima docker docker-compose
 
 # 启动 colima
-colima start --cpu 6 --memory 1
+colima start --cpu 6 --memory 10
 
 # 其他管理命令，试验期间无需执行
 # 停止 colima
