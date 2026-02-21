@@ -167,7 +167,7 @@ make manifests
 
 接着编写代码逻辑：
 
-这部分和书上 6.3 中的将 kubebuilder 的内容相同。
+这部分和书上 6.3 中的讲 kubebuilder 的内容相同。
 
 首先，在 api/v1alpha1/at_types.go 中修改 AtSpec 和 AtStatus 结构体：
 
