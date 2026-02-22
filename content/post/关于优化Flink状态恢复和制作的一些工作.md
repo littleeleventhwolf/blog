@@ -62,9 +62,7 @@ author: '小十一狼'
 
 ![small-window-rocksdb-files](/关于优化Flink状态恢复和制作的一些工作/small-window-rocksdb-files.png)
 
-文件数量持续增长。都是随着时间推移，各 sst 文件间不互相相交，触发 compaction 也只会被移至下一层，并不会去除墓碑来减小体积，另外因为 Time Window 的访问性质，这些 sst 文件也不会再被访问到。因此无论是 size compaction 亦或是 seek compaction 都无法达到真正的文件合并效果：
-
-![small-window-rocksdb-file-list](/关于优化Flink状态恢复和制作的一些工作/small-window-file-list.png)
+文件数量持续增长。都是随着时间推移，各 sst 文件间不互相相交，触发 compaction 也只会被移至下一层，并不会去除墓碑来减小体积，另外因为 Time Window 的访问性质，这些 sst 文件也不会再被访问到。因此无论是 size compaction 亦或是 seek compaction 都无法达到真正的文件合并效果。
 
 查看文件内容全是 deletion 墓碑数据（type=0 表示 kTypeDeletion）：
 
