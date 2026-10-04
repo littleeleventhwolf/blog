@@ -154,22 +154,6 @@ prctl(PR_SCHED_CORE, PR_SCHED_CORE_SHARE_FROM, target_pid, PIDTYPE_PID, 0);
 
 第四个参数可以取 PIDTYPE_PID（按单个进程）或 PIDTYPE_TGID（按线程组，即整个进程的所有线程）。
 
-**cgroup v2 接口**：
-
-cgroup v2 下可通过 cpu.core_sched 控制。写入 1 表示该 cgroup 启用 core scheduling，内核会为这个 cgroup 分配一个独立的 cookie：
-
-```bash
-# 为 LS 组启用 core scheduling，内核分配 cookie A
-echo 1 > /sys/fs/cgroup/ls-group/cpu.core_sched
-
-# 为 BE 组启用 core scheduling，内核分配 cookie B
-echo 1 > /sys/fs/cgroup/be-group/cpu.core_sched
-
-# 结果：cookie A <> cookie B，两组任务不能在同一物理核的 SMT 线程上同时运行
-```
-
-cgroup 方式比 prctl 更简洁——每个 cgroup 自动获得独立 cookie，不需要手动管理共享关系。
-
 ## Core Scheduling 约束
 
 - 需要内核启用 CONFIG_SCHED_CORE，通常 Linux 5.14+ 才支持；
